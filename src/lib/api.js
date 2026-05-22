@@ -14,13 +14,20 @@ function getBackendBase() {
   return "";
 }
 
-const BASE = getBackendBase();
-export const API = BASE ? `${BASE}/api` : "/api";
+export const BACKEND_BASE = getBackendBase();
+export const API = BACKEND_BASE ? `${BACKEND_BASE}/api` : "/api";
 
 export const api = axios.create({
   baseURL: API,
   withCredentials: true,
 });
+
+export function resolveMediaUrl(url) {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url) || url.startsWith("data:")) return url;
+  if (url.startsWith("/")) return `${BACKEND_BASE || ""}${url}`;
+  return url;
+}
 
 export function formatApiError(err) {
   const detail = err?.response?.data?.detail;

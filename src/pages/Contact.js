@@ -15,15 +15,17 @@ export default function Contact() {
       toast.success("Message received. We'll be in touch.");
     } catch (err) {
       toast.error(formatApiError(err));
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <div className="max-w-3xl mx-auto px-6 lg:px-10 py-20" data-testid="contact-page">
       <div className="eyebrow mb-4">Say Hello</div>
-      <h1 className="font-serif text-5xl md:text-6xl text-forest-900 leading-tight">Editorial · Advertising · Reader notes.</h1>
+      <h1 className="font-serif text-5xl md:text-6xl text-forest-900 leading-tight">Reader notes.</h1>
       <p className="text-forest-500 text-lg mt-5 leading-relaxed">
-        Whether you're an advertiser exploring a partnership, a reader with a kind note, or a writer pitching a piece — we read everything.
+        Questions, feedback, or a quick hello are always welcome. We read every message that comes in.
       </p>
 
       <form onSubmit={submit} className="mt-12 space-y-5 bg-white border border-sand-300 p-8" data-testid="contact-form">
@@ -44,19 +46,11 @@ export default function Contact() {
           />
         </div>
         <button disabled={busy} className="btn-primary" data-testid="contact-submit">
-          {busy ? "Sending…" : "Send message"}
+          {busy ? "Sending..." : "Send message"}
         </button>
       </form>
 
-      <div className="mt-12 grid md:grid-cols-3 gap-6 text-sm">
-        <div>
-          <div className="eyebrow mb-2">Editorial</div>
-          <div className="text-forest-700">editor@globaltrendhub.com</div>
-        </div>
-        <div>
-          <div className="eyebrow mb-2">Advertising</div>
-          <div className="text-forest-700">advertise@globaltrendhub.com</div>
-        </div>
+      <div className="mt-12 text-sm">
         <div>
           <div className="eyebrow mb-2">Postal</div>
           <div className="text-forest-700">PO Box 142, Bend, OR 97703</div>

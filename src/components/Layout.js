@@ -122,6 +122,7 @@ export function Footer() {
 
 function NewsletterSmall() {
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
 
   return (
     <form
@@ -130,13 +131,17 @@ function NewsletterSmall() {
         e.preventDefault();
         const email = e.currentTarget.email.value.trim();
         if (!email) return;
+        setBusy(true);
         try {
-          await (await import("../lib/api")).api.post("/newsletter", { email });
+          const { api, formatApiError } = await import("../lib/api");
+          const { data } = await api.post("/newsletter", { email });
           e.currentTarget.reset();
-          setMessage("Successfully subscribed! Welcome aboard.");
+          setMessage(data?.message || "Subscribed.");
         } catch (err) {
           setMessage("");
-          (await import("sonner")).toast.error("Could not subscribe. Try again.");
+          (await import("sonner")).toast.error(formatApiError(err));
+        } finally {
+          setBusy(false);
         }
       }}
       data-testid="footer-newsletter-form"
@@ -146,11 +151,14 @@ function NewsletterSmall() {
           type="email"
           name="email"
           required
+          disabled={busy}
           placeholder="you@quiet.email"
           className="flex-1 bg-white border border-sand-300 px-3 py-2 text-sm focus:outline-none focus:border-sage"
           data-testid="footer-newsletter-email"
         />
-        <button className="btn-primary text-xs py-2 px-3" data-testid="footer-newsletter-submit">Join</button>
+        <button className="btn-primary text-xs py-2 px-3" data-testid="footer-newsletter-submit" disabled={busy}>
+          {busy ? "..." : "Join"}
+        </button>
       </div>
       {message && <p className="text-xs text-sage">{message}</p>}
     </form>

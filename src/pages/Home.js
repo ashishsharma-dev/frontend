@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { api, resolveMediaUrl } from "../lib/api";
+import { api, formatApiError, resolveMediaUrl } from "../lib/api";
 import { PostCard, AdSlot } from "../components/Cards";
 import ThreeBackground from "../components/ThreeBackground";
 import { formatCategoryLabel, formatCategoryMeta } from "../lib/categories";
 import { HomeSkeleton } from "../components/SiteSkeletons";
+import { toast } from "sonner";
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -181,17 +182,22 @@ function HeroCoverImage({ src, alt }) {
 function NewsletterForm() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
 
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
+        setBusy(true);
         try {
-          await api.post("/newsletter", { email });
+          const { data } = await api.post("/newsletter", { email });
           setEmail("");
-          setMessage("Successfully subscribed! Welcome aboard.");
-        } catch (_) {
+          setMessage(data?.message || "Subscribed.");
+        } catch (err) {
           setMessage("");
+          toast.error(formatApiError(err));
+        } finally {
+          setBusy(false);
         }
       }}
       className="mt-8 max-w-xl mx-auto space-y-3"
@@ -201,14 +207,15 @@ function NewsletterForm() {
         <input
           type="email"
           required
+          disabled={busy}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@quiet.email"
           className="flex-1 bg-white border border-sand-300 px-4 py-3 focus:outline-none focus:border-sage"
           data-testid="newsletter-email"
         />
-        <button className="btn-primary" data-testid="newsletter-submit" type="submit">
-          Join the list
+        <button className="btn-primary" data-testid="newsletter-submit" type="submit" disabled={busy}>
+          {busy ? "Joining..." : "Join the list"}
         </button>
       </div>
       {message && <p className="text-sm text-sage">{message}</p>}

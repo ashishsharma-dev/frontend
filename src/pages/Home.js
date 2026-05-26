@@ -65,10 +65,10 @@ export default function Home() {
         >
           <div className="eyebrow mb-5">Calm editorial</div>
           <h1 className="font-serif text-5xl md:text-7xl text-forest-900 leading-[1.05] tracking-tight">
-            Trends worth slowing down for - across travel, tech, finance, lifestyle, sports, and markets.
+            The best things you'll read this week won't go viral.
           </h1>
           <p className="mt-7 text-lg md:text-xl text-forest-500 max-w-2xl leading-relaxed">
-            Long-form essays, slow journalism, and considered recommendations - published for readers who&apos;d rather think than scroll.
+           And that's exactly why we write them. Deep, considered, unhurried journalism across travel & adventure, technology, finance, e-commerce, sports, and trading & investment.
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
             <Link to="/blog" className="btn-primary" data-testid="hero-read-articles">Read the latest</Link>
@@ -182,27 +182,31 @@ function HeroCoverImage({ src, alt }) {
 function NewsletterForm() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
+        setMessage("");
+        setErrorMessage("");
         setBusy(true);
         try {
           const { data } = await api.post("/newsletter", { email });
           setEmail("");
-          setMessage(data?.message || "Subscribed.");
+          setMessage(data?.message || "Successfully subscribed! Welcome aboard.");
+          toast.success(data?.message || "Successfully subscribed! Welcome aboard.");
         } catch (err) {
           setMessage("");
-          toast.error(formatApiError(err));
+          setErrorMessage(formatApiError(err));
         } finally {
           setBusy(false);
         }
       }}
       className="mt-8 max-w-xl mx-auto space-y-3"
       data-testid="home-newsletter-form"
-    >
+      >
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="email"
@@ -219,6 +223,7 @@ function NewsletterForm() {
         </button>
       </div>
       {message && <p className="text-sm text-sage">{message}</p>}
+      {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
     </form>
   );
 }

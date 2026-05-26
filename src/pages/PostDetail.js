@@ -13,6 +13,8 @@ export default function PostDetail() {
   const [comments, setComments] = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [reactions, setReactions] = useState({ like: 0, love: 0, insightful: 0 });
+  const [hasReacted, setHasReacted] = useState(false);
+  const [reacting, setReacting] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -21,12 +23,15 @@ export default function PostDetail() {
     setComments([]);
     setCommentsLoading(true);
     setReactions({ like: 0, love: 0, insightful: 0 });
+    setHasReacted(false);
+    setReacting(false);
     window.scrollTo(0, 0);
 
     api.get(`/posts/${slug}`).then(({ data }) => {
       if (!mounted) return;
       setPost(data);
       setReactions(data?.reactions || { like: 0, love: 0, insightful: 0 });
+      setHasReacted(Boolean(data?.viewer_has_reacted));
     }).catch(() => {
       if (mounted) setPost(false);
     });
@@ -43,12 +48,17 @@ export default function PostDetail() {
   }, [slug]);
 
   const react = async (type) => {
+    if (hasReacted || reacting) return;
+    setReacting(true);
     try {
       const { data } = await api.post(`/posts/${slug}/react`, { type });
       setReactions(data);
+      setHasReacted(true);
       toast.success("Reaction recorded.");
     } catch (e) {
       toast.error(formatApiError(e));
+    } finally {
+      setReacting(false);
     }
   };
 
@@ -90,10 +100,11 @@ export default function PostDetail() {
         <div className="mt-16 pt-10 border-t border-sand-300" data-testid="reactions-section">
           <div className="eyebrow mb-4">Tell us how it landed</div>
           <div className="flex gap-3">
-            <ReactionBtn type="like" count={reactions.like} label="Useful" onClick={() => react("like")} />
-            <ReactionBtn type="love" count={reactions.love} label="Loved it" onClick={() => react("love")} />
-            <ReactionBtn type="insightful" count={reactions.insightful} label="Insightful" onClick={() => react("insightful")} />
+            <ReactionBtn type="like" count={reactions.like} label="Useful" onClick={() => react("like")} disabled={hasReacted || reacting} />
+            <ReactionBtn type="love" count={reactions.love} label="Loved it" onClick={() => react("love")} disabled={hasReacted || reacting} />
+            <ReactionBtn type="insightful" count={reactions.insightful} label="Insightful" onClick={() => react("insightful")} disabled={hasReacted || reacting} />
           </div>
+          {hasReacted && <p className="mt-4 text-sm text-sage">You have already reacted to this article.</p>}
         </div>
 
         <CommentsSection slug={slug} comments={comments} setComments={setComments} commentsLoading={commentsLoading} />
@@ -137,11 +148,14 @@ function PostCoverImage({ src, alt }) {
   );
 }
 
-function ReactionBtn({ type, count, label, onClick }) {
+function ReactionBtn({ type, count, label, onClick, disabled = false }) {
   return (
     <button
       onClick={onClick}
-      className="px-4 py-3 border border-sand-300 hover:border-sage hover:text-sage transition-colors text-sm flex items-center gap-2"
+      disabled={disabled}
+      className={`px-4 py-3 border text-sm flex items-center gap-2 transition-colors ${
+        disabled ? "border-sand-200 text-forest-400 cursor-not-allowed" : "border-sand-300 hover:border-sage hover:text-sage"
+      }`}
       data-testid={`react-${type}`}
     >
       <span>{label}</span>

@@ -49,13 +49,6 @@ export default function Contact() {
           {busy ? "Sending..." : "Send message"}
         </button>
       </form>
-
-      <div className="mt-12 text-sm">
-        <div>
-          <div className="eyebrow mb-2">Postal</div>
-          <div className="text-forest-700">PO Box 142, Bend, OR 97703</div>
-        </div>
-      </div>
     </div>
   );
 }

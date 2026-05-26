@@ -77,7 +77,10 @@ export function AdSlot({ category = "", label = "Sponsored placement" }) {
 
     api.get(`/ads/placement${q}`)
       .then(({ data }) => {
-        if (mounted) setAd(data || FALLBACK_AD);
+        if (mounted) {
+          const nextAd = data?.image_url ? data : FALLBACK_AD;
+          setAd(nextAd);
+        }
       })
       .catch(() => {
         if (mounted) setAd(FALLBACK_AD);

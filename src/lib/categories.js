@@ -2,23 +2,24 @@ const SITE_CATEGORY_LABELS = {
   travel: "Travel",
   tech: "Tech",
   finance: "Finance",
-  products: "Lifestyle",
+  ecommerce: "Ecommerce",
   sports: "Sports",
-  trading: "Trading",
+  trading: "Trading & Investment",
 };
 
 const NAV_FOOTER_CATEGORY_LABELS = {
-  travel: "Travel & Adventure",
-  tech: "Technology",
+  travel: "Travel",
+  tech: "Tech",
   finance: "Finance",
-  products: "E-commerce",
+  ecommerce: "Ecommerce",
   sports: "Sports",
   trading: "Trading & Investment",
 };
 
 export function formatCategoryLabel(value, context = "site") {
   if (!value) return "";
-  const key = String(value).trim().toLowerCase();
+  const raw = String(value).trim().toLowerCase();
+  const key = raw === "products" ? "ecommerce" : raw;
   const labels = context === "nav" ? NAV_FOOTER_CATEGORY_LABELS : SITE_CATEGORY_LABELS;
   return labels[key] || value;
 }

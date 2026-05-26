@@ -7,7 +7,7 @@ const NAV = [
   { to: "/category/travel", label: formatCategoryLabel("travel", "nav") },
   { to: "/category/tech", label: formatCategoryLabel("tech", "nav") },
   { to: "/category/finance", label: "Finance" },
-  { to: "/category/products", label: formatCategoryLabel("products", "nav") },
+  { to: "/category/ecommerce", label: formatCategoryLabel("ecommerce", "nav") },
   { to: "/category/sports", label: "Sports" },
   { to: "/category/trading", label: formatCategoryLabel("trading", "nav") },
   { to: "/about", label: "About" },
@@ -15,6 +15,8 @@ const NAV = [
 ];
 
 export function Navbar() {
+  const mobileNav = NAV.filter((item) => !["/about", "/contact"].includes(item.to));
+
   return (
     <header className="sticky top-0 z-50 glass" data-testid="site-navbar">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
@@ -40,7 +42,7 @@ export function Navbar() {
       </div>
       <div className="lg:hidden border-t border-sand-300/60 overflow-x-auto">
         <div className="px-6 py-2 flex gap-5 text-xs whitespace-nowrap">
-          {NAV.map((item) => (
+          {mobileNav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -75,7 +77,7 @@ export function EditorialRibbon() {
 }
 
 export function Footer() {
-  const readLinks = ["travel", "tech", "finance", "products", "sports", "trading"];
+  const readLinks = ["travel", "tech", "finance", "ecommerce", "sports", "trading"];
 
   return (
     <footer className="border-t border-sand-300 bg-sand-100 mt-24" data-testid="site-footer">
@@ -114,7 +116,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-sand-300 py-6 text-center text-xs text-forest-500">
-        &copy; Githy. Trends worth slowing down for.
+        &copy; Githy.
       </div>
     </footer>
   );
@@ -122,6 +124,7 @@ export function Footer() {
 
 function NewsletterSmall() {
   const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   return (
@@ -131,21 +134,23 @@ function NewsletterSmall() {
         e.preventDefault();
         const email = e.currentTarget.email.value.trim();
         if (!email) return;
+        setMessage("");
+        setErrorMessage("");
         setBusy(true);
         try {
           const { api, formatApiError } = await import("../lib/api");
           const { data } = await api.post("/newsletter", { email });
           e.currentTarget.reset();
-          setMessage(data?.message || "Subscribed.");
+          setMessage(data?.message || "Successfully subscribed! Welcome aboard.");
         } catch (err) {
           setMessage("");
-          (await import("sonner")).toast.error(formatApiError(err));
+          setErrorMessage(formatApiError(err));
         } finally {
           setBusy(false);
         }
       }}
       data-testid="footer-newsletter-form"
-    >
+      >
       <div className="flex gap-2">
         <input
           type="email"
@@ -161,6 +166,7 @@ function NewsletterSmall() {
         </button>
       </div>
       {message && <p className="text-xs text-sage">{message}</p>}
+      {errorMessage && <p className="text-xs text-red-600">{errorMessage}</p>}
     </form>
   );
 }

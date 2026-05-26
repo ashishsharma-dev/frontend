@@ -9,7 +9,7 @@ const EMPTY_POST = {
   title: "",
   excerpt: "",
   content: "",
-  category: "travel",
+  category: "travel-adventure",
   author: "Editorial Team",
   cover_image: "",
   tags: [],
@@ -17,19 +17,19 @@ const EMPTY_POST = {
 };
 
 const EMPTY_AD = {
-  category: "travel",
+  category: "travel-adventure",
   image_url: "",
   hyperlink: "",
   status: "active",
 };
 
 const CATEGORY_ORDER = [
-  { slug: "travel", color: "#839788" },
-  { slug: "tech", color: "#5C6B6D" },
+  { slug: "travel-adventure", color: "#839788" },
+  { slug: "technology", color: "#5C6B6D" },
   { slug: "finance", color: "#C6A28A" },
   { slug: "ecommerce", color: "#9C8B7A" },
   { slug: "sports", color: "#6E8B7E" },
-  { slug: "trading", color: "#A48A6E" },
+  { slug: "trading-investment", color: "#A48A6E" },
 ];
 
 function AdminPostRow({ p, onEdit, onRemove }) {

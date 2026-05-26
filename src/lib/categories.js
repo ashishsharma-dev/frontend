@@ -1,25 +1,33 @@
 const SITE_CATEGORY_LABELS = {
-  travel: "Travel",
-  tech: "Tech",
+  "travel-adventure": "Travel & Adventure",
+  technology: "Technology",
   finance: "Finance",
   ecommerce: "Ecommerce",
   sports: "Sports",
-  trading: "Trading & Investment",
+  "trading-investment": "Trading & Investment",
 };
 
 const NAV_FOOTER_CATEGORY_LABELS = {
-  travel: "Travel",
-  tech: "Tech",
+  "travel-adventure": "Travel & Adventure",
+  technology: "Technology",
   finance: "Finance",
   ecommerce: "Ecommerce",
   sports: "Sports",
-  trading: "Trading & Investment",
+  "trading-investment": "Trading & Investment",
 };
 
 export function formatCategoryLabel(value, context = "site") {
   if (!value) return "";
   const raw = String(value).trim().toLowerCase();
-  const key = raw === "products" ? "ecommerce" : raw;
+  const key = raw === "products"
+    ? "ecommerce"
+    : raw === "travel"
+      ? "travel-adventure"
+      : raw === "tech"
+        ? "technology"
+        : raw === "trading"
+          ? "trading-investment"
+        : raw;
   const labels = context === "nav" ? NAV_FOOTER_CATEGORY_LABELS : SITE_CATEGORY_LABELS;
   return labels[key] || value;
 }

@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { formatCategoryLabel } from "../lib/categories";
+import { api, formatApiError } from "../lib/api";
+import { toast } from "sonner";
 
 const NAV = [
   { to: "/", label: "Home" },
-  { to: "/category/travel", label: formatCategoryLabel("travel", "nav") },
-  { to: "/category/tech", label: formatCategoryLabel("tech", "nav") },
+  { to: "/category/travel-adventure", label: formatCategoryLabel("travel-adventure", "nav") },
+  { to: "/category/technology", label: formatCategoryLabel("technology", "nav") },
   { to: "/category/finance", label: "Finance" },
   { to: "/category/ecommerce", label: formatCategoryLabel("ecommerce", "nav") },
   { to: "/category/sports", label: "Sports" },
-  { to: "/category/trading", label: formatCategoryLabel("trading", "nav") },
+  { to: "/category/trading-investment", label: formatCategoryLabel("trading-investment", "nav") },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
 ];
@@ -62,7 +64,7 @@ export function Navbar() {
 export function EditorialRibbon() {
   const items = [
     "Calm reading", "Slow journalism", "Long-form essays", "Considered products",
-    "Patient finance", "Quiet tech", "Editorial in calm rhythm", "Reader-first",
+    "Patient finance", "Quiet technology", "Editorial in calm rhythm", "Reader-first",
   ];
 
   return (
@@ -77,7 +79,7 @@ export function EditorialRibbon() {
 }
 
 export function Footer() {
-  const readLinks = ["travel", "tech", "finance", "ecommerce", "sports", "trading"];
+  const readLinks = ["travel-adventure", "technology", "finance", "ecommerce", "sports", "trading-investment"];
 
   return (
     <footer className="border-t border-sand-300 bg-sand-100 mt-24" data-testid="site-footer">
@@ -85,7 +87,7 @@ export function Footer() {
         <div>
           <div className="font-serif text-2xl text-forest-900 mb-3">Githy</div>
           <p className="text-sm text-forest-500 leading-relaxed">
-            Calm, considered writing on travel, tech, finance, lifestyle, sports and trading. Trends worth slowing down for.
+            Calm, considered writing on travel and adventure, technology, finance, ecommerce, sports and trading & investment. Trends worth slowing down for.
           </p>
         </div>
         <div>
@@ -132,19 +134,21 @@ function NewsletterSmall() {
       className="space-y-3"
       onSubmit={async (e) => {
         e.preventDefault();
-        const email = e.currentTarget.email.value.trim();
+        const form = e.currentTarget;
+        const email = form.email.value.trim();
         if (!email) return;
         setMessage("");
         setErrorMessage("");
         setBusy(true);
         try {
-          const { api, formatApiError } = await import("../lib/api");
           const { data } = await api.post("/newsletter", { email });
-          e.currentTarget.reset();
+          form.reset();
           setMessage(data?.message || "Successfully subscribed! Welcome aboard.");
+          toast.success(data?.message || "Successfully subscribed! Welcome aboard.");
         } catch (err) {
           setMessage("");
           setErrorMessage(formatApiError(err));
+          toast.error(formatApiError(err));
         } finally {
           setBusy(false);
         }

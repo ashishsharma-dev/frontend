@@ -73,11 +73,53 @@ function AdminAdRow({ ad, onEdit, onToggle, onRemove }) {
   );
 }
 
+function CommentRow({ comment, onToggleVisibility, onRemove }) {
+  const createdAt = formatAdminDate(comment.created_at);
+
+  return (
+    <div className="bg-white border border-sand-300 p-5 hover:border-sage/50 transition-colors" data-testid={`admin-comment-row-${comment.id}`}>
+      <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-forest-500">
+            <span className={`px-2 py-1 border ${comment.approved ? "border-sage text-sage" : "border-terracotta text-terracotta-dark"}`}>
+              {comment.approved ? "Visible" : "Hidden"}
+            </span>
+            <span>{createdAt}</span>
+          </div>
+          <div className="mt-3 font-medium text-forest-900">{comment.name}</div>
+          <div className="text-xs text-forest-500 mt-1 break-all">{comment.email}</div>
+          <div className="text-xs text-forest-500 mt-2">
+            On: <span className="text-forest-700">{comment.post_title || comment.post_slug}</span>
+          </div>
+          <p className="mt-4 text-sm text-forest-700 leading-relaxed whitespace-pre-wrap">{comment.content}</p>
+        </div>
+        <div className="flex flex-wrap gap-3 lg:justify-end">
+          <button
+            type="button"
+            onClick={() => onToggleVisibility(comment)}
+            className="btn-ghost text-xs py-1.5 px-3"
+          >
+            {comment.approved ? "Hide" : "Show"}
+          </button>
+          <button
+            type="button"
+            onClick={() => onRemove(comment.id)}
+            className="text-xs text-red-600 hover:underline"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [comments, setComments] = useState([]);
   const [ads, setAds] = useState([]);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_POST);
@@ -102,13 +144,15 @@ export default function AdminDashboard() {
 
   async function load() {
     try {
-      const [s, p, a] = await Promise.all([
+      const [s, p, c, a] = await Promise.all([
         api.get("/admin/stats"),
         api.get("/admin/posts"),
+        api.get("/admin/comments"),
         api.get("/admin/ads"),
       ]);
       setStats(s.data);
       setPosts(p.data);
+      setComments(c.data);
       setAds(a.data);
     } catch (e) {
       toast.error(formatApiError(e));
@@ -291,6 +335,30 @@ export default function AdminDashboard() {
     setAdFileName("");
   }
 
+  async function toggleCommentVisibility(comment) {
+    try {
+      await api.put(`/admin/comments/${comment.id}`, { approved: !comment.approved });
+      toast.success(comment.approved ? "Comment hidden." : "Comment published.");
+      load();
+    } catch (err) {
+      toast.error(formatApiError(err));
+    }
+  }
+
+  async function removeComment(id) {
+    if (!window.confirm("Delete this comment permanently?")) return;
+    try {
+      await api.delete(`/admin/comments/${id}`);
+      toast.success("Comment deleted.");
+      load();
+    } catch (err) {
+      toast.error(formatApiError(err));
+    }
+  }
+
+  const visibleComments = comments.filter((comment) => comment.approved).length;
+  const hiddenComments = comments.length - visibleComments;
+
   return (
     <div className="max-w-7xl mx-auto px-6 lg:px-10 py-12" data-testid="admin-dashboard">
       <div className="flex items-start justify-between gap-4 mb-8">
@@ -449,6 +517,38 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      <section className="mt-16 pt-10 border-t border-sand-300" data-testid="admin-comments-panel">
+        <div className="mb-8">
+          <div className="eyebrow mb-3">Comment Moderation</div>
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+              <h2 className="font-serif text-4xl text-forest-900">Manage reader comments</h2>
+              <p className="text-forest-500 mt-3 max-w-3xl">
+                Hide comments from the public feed or delete them permanently whenever you need to moderate a conversation.
+              </p>
+            </div>
+            <div className="text-sm text-forest-500">
+              {visibleComments} visible &middot; {hiddenComments} hidden
+            </div>
+          </div>
+        </div>
+
+        {comments.length === 0 ? (
+          <div className="bg-white border border-sand-300 p-6 text-sm text-forest-500">No comments have been posted yet.</div>
+        ) : (
+          <div className="space-y-4">
+            {comments.map((comment) => (
+              <CommentRow
+                key={comment.id}
+                comment={comment}
+                onToggleVisibility={toggleCommentVisibility}
+                onRemove={removeComment}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
       <section className="mt-16 pt-10 border-t border-sand-300" data-testid="admin-ads-panel">
         <div className="mb-8">
           <div className="eyebrow mb-3">Advertisement Panel</div>
@@ -590,6 +690,13 @@ function Textarea({ label, value, onChange, rows = 4, testid }) {
       />
     </div>
   );
+}
+
+function formatAdminDate(value) {
+  if (!value) return "Unknown date";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString();
 }
 
 function stripHtml(html) {

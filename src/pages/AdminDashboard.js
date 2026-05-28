@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { api, formatApiError, resolveMediaUrl } from "../lib/api";
 import { toast } from "sonner";
 import { formatCategoryLabel } from "../lib/categories";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
 
 const EMPTY_POST = {
   title: "",
@@ -623,74 +626,105 @@ function CoverPlaceholderOrImage({ src, alt, className = "" }) {
 }
 
 function RichTextEditor({ label, value, onChange, testid }) {
-  const editorRef = useRef(null);
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [2, 3],
+        },
+      }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        defaultProtocol: "https",
+      }),
+    ],
+    content: value || "",
+    editorProps: {
+      attributes: {
+        class: "article-body min-h-[420px] px-5 py-4 focus:outline-none",
+        "data-testid": testid,
+      },
+    },
+    onUpdate: ({ editor: currentEditor }) => {
+      onChange(currentEditor.getHTML());
+    },
+  });
 
   useEffect(() => {
-    const editor = editorRef.current;
     if (!editor) return;
-    if (editor.innerHTML !== value) {
-      editor.innerHTML = value || "";
+    const currentHtml = editor.getHTML();
+    const nextHtml = value || "";
+    if (currentHtml !== nextHtml) {
+      editor.commands.setContent(nextHtml, false);
     }
-  }, [value]);
+  }, [editor, value]);
 
-  const exec = (command, commandValue = null) => {
-    editorRef.current?.focus();
-    document.execCommand(command, false, commandValue);
-    onChange(editorRef.current?.innerHTML || "");
-  };
-
-  const setBlock = (tag) => {
-    exec("formatBlock", tag);
+  const setLink = () => {
+    if (!editor) return;
+    const previousUrl = editor.getAttributes("link").href || "";
+    const url = window.prompt("Enter the link URL", previousUrl);
+    if (url === null) return;
+    if (!url.trim()) {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
+    }
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
   };
 
   return (
     <div>
       <label className="eyebrow block mb-1">{label}</label>
       <div className="border border-sand-300 bg-white">
-        <div className="flex flex-wrap gap-2 p-3 border-b border-sand-300 bg-sand-50">
-          <EditorButton label="B" onClick={() => exec("bold")} />
-          <EditorButton label="I" onClick={() => exec("italic")} />
-          <EditorButton label="U" onClick={() => exec("underline")} />
-          <EditorButton label="H2" onClick={() => setBlock("h2")} />
-          <EditorButton label="P" onClick={() => setBlock("p")} />
-          <EditorButton label="Quote" onClick={() => setBlock("blockquote")} />
-          <EditorButton label="Bullets" onClick={() => exec("insertUnorderedList")} />
-          <EditorButton label="Numbers" onClick={() => exec("insertOrderedList")} />
-          <EditorButton
-            label="Link"
-            onClick={() => {
-              const url = window.prompt("Enter the link URL");
-              if (url) exec("createLink", url);
-            }}
-          />
-          <EditorButton label="Clear" onClick={() => exec("removeFormat")} />
+        <div className="border-b border-sand-300 bg-sand-50">
+          <div className="flex flex-wrap gap-2 p-3">
+            <EditorButton label="Paragraph" active={editor?.isActive("paragraph")} onClick={() => editor?.chain().focus().setParagraph().run()} />
+            <EditorButton label="H2" active={editor?.isActive("heading", { level: 2 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} />
+            <EditorButton label="H3" active={editor?.isActive("heading", { level: 3 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} />
+            <EditorDivider />
+            <EditorButton label="Bold" active={editor?.isActive("bold")} onClick={() => editor?.chain().focus().toggleBold().run()} />
+            <EditorButton label="Italic" active={editor?.isActive("italic")} onClick={() => editor?.chain().focus().toggleItalic().run()} />
+            <EditorButton label="Strike" active={editor?.isActive("strike")} onClick={() => editor?.chain().focus().toggleStrike().run()} />
+            <EditorDivider />
+            <EditorButton label="Quote" active={editor?.isActive("blockquote")} onClick={() => editor?.chain().focus().toggleBlockquote().run()} />
+            <EditorButton label="Bullets" active={editor?.isActive("bulletList")} onClick={() => editor?.chain().focus().toggleBulletList().run()} />
+            <EditorButton label="Numbers" active={editor?.isActive("orderedList")} onClick={() => editor?.chain().focus().toggleOrderedList().run()} />
+            <EditorDivider />
+            <EditorButton label="Link" active={editor?.isActive("link")} onClick={setLink} />
+            <EditorButton label="Unlink" onClick={() => editor?.chain().focus().unsetLink().run()} />
+            <EditorButton label="Clear" onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()} />
+          </div>
+          <div className="px-3 pb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-forest-500">
+            Visual editor
+          </div>
         </div>
-        <div
-          ref={editorRef}
-          contentEditable
-          suppressContentEditableWarning
-          onInput={(e) => onChange(e.currentTarget.innerHTML)}
-          className="w-full min-h-[260px] bg-sand-50 px-3 py-3 focus:outline-none focus:border-sage text-sm leading-relaxed"
-          data-testid={testid}
-        />
+        <EditorContent editor={editor} className="bg-white" />
       </div>
       <div className="text-xs text-forest-500 mt-2">
-        Rich text formatting is saved as HTML and will render on the article page.
+        Write visually here, similar to a classic blog editor. Formatting is saved as HTML for the article page.
       </div>
     </div>
   );
 }
 
-function EditorButton({ label, onClick }) {
+function EditorButton({ label, onClick, active = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="px-3 py-1.5 text-xs border border-sand-300 bg-white hover:border-sage hover:text-sage transition-colors"
+      className={`px-3 py-1.5 text-xs border transition-colors ${
+        active
+          ? "border-forest-900 bg-forest-900 text-white"
+          : "border-sand-300 bg-white hover:border-sage hover:text-sage"
+      }`}
     >
       {label}
     </button>
   );
+}
+
+function EditorDivider() {
+  return <div className="w-px h-8 bg-sand-300 mx-1" aria-hidden="true" />;
 }
 
 function Select({ label, value, onChange, options, testid }) {

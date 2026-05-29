@@ -8,8 +8,6 @@ import { formatCategoryLabel, formatCategoryMeta } from "../lib/categories";
 import { HomeSkeleton } from "../components/SiteSkeletons";
 import { toast } from "sonner";
 
-const HERO_RAIL_COUNT = 4;
-
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -51,7 +49,6 @@ export default function Home() {
 
   const hero = posts[0];
   const featured = posts.slice(1, 4);
-  const railPosts = posts.slice(1, 1 + HERO_RAIL_COUNT);
   const recent = posts.slice(4, 16);
 
   return (
@@ -60,62 +57,29 @@ export default function Home() {
 
       <section className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-16 md:pt-24 pb-16">
         <div className="noise" />
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] lg:items-start">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="max-w-4xl"
-          >
-            <div className="eyebrow mb-5">Calm editorial</div>
-            <h1 className="font-serif text-5xl md:text-7xl text-forest-900 leading-[1.05] tracking-tight">
-              The best things you'll read this week won't go viral.
-            </h1>
-            <p className="mt-7 text-lg md:text-xl text-forest-500 max-w-2xl leading-relaxed">
-             And that's exactly why we write them. Deep, considered, unhurried journalism across travel & adventure, technology, finance, e-commerce, sports, and trading & investment.
-            </p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Link to="/blog" className="btn-primary" data-testid="hero-read-articles">Read the latest</Link>
-            </div>
-          </motion.div>
-
-          {railPosts.length > 0 && (
-            <motion.aside
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.08 }}
-              className="editorial-card p-6 lg:p-7 bg-white/90 backdrop-blur-sm"
-              data-testid="home-hero-rail"
-            >
-              <div className="eyebrow mb-4">Latest articles</div>
-              <div className="space-y-4">
-                {railPosts.map((post, index) => (
-                  <Link
-                    key={post.id}
-                    to={`/post/${post.slug}`}
-                    className="block border-b border-sand-200 pb-4 last:border-b-0 last:pb-0 group"
-                  >
-                    <div className="text-[0.68rem] uppercase tracking-[0.24em] text-forest-500">
-                      {String(index + 1).padStart(2, "0")} · {formatCategoryLabel(post.category)}
-                    </div>
-                    <h2 className="mt-2 font-serif text-2xl text-forest-900 leading-tight transition-colors group-hover:text-terracotta-dark">
-                      {post.title}
-                    </h2>
-                    <p className="mt-2 text-sm leading-relaxed text-forest-500 line-clamp-2">
-                      {post.excerpt}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </motion.aside>
-          )}
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="max-w-4xl"
+        >
+          <div className="eyebrow mb-5">Calm editorial</div>
+          <h1 className="font-serif text-5xl md:text-7xl text-forest-900 leading-[1.05] tracking-tight">
+            The best things you'll read this week won't go viral.
+          </h1>
+          <p className="mt-7 text-lg md:text-xl text-forest-500 max-w-2xl leading-relaxed">
+            And that's exactly why we write them. Deep, considered, unhurried journalism across travel & adventure, technology, finance, e-commerce, sports, and trading & investment.
+          </p>
+          <div className="mt-9 flex flex-wrap gap-3">
+            <Link to="/blog" className="btn-primary" data-testid="hero-read-articles">Read the latest</Link>
+          </div>
+        </motion.div>
       </section>
 
       {hero && (
         <section className="max-w-7xl mx-auto px-6 lg:px-10 pb-12" data-testid="hero-post-section">
           <div className="grid lg:grid-cols-12 gap-6 lg:gap-8">
-            <Link to={`/post/${hero.slug}`} className="lg:col-span-8 group flex flex-col overflow-hidden bg-white border border-sand-300 hover:border-sage/40 transition-all duration-300 hover:-translate-y-1">
+            <Link to={`/post/${hero.slug}`} className="lg:col-span-12 group flex flex-col overflow-hidden bg-white border border-sand-300 hover:border-sage/40 transition-all duration-300 hover:-translate-y-1">
               <div className="overflow-hidden aspect-[16/10] bg-sand-200">
                 <HeroCoverImage src={hero.cover_image} alt={hero.title} />
               </div>
@@ -130,7 +94,8 @@ export default function Home() {
                 </div>
               </div>
             </Link>
-            <div className="lg:col-span-4 grid grid-cols-1 gap-6 lg:gap-8">
+            
+            <div className="lg:col-span-12 grid lg:grid-cols-3 gap-6 lg:gap-8">
               {featured.map((p) => (
                 <PostCard key={p.id} post={p} />
               ))}
@@ -241,7 +206,7 @@ function NewsletterForm() {
       }}
       className="mt-8 max-w-xl mx-auto space-y-3"
       data-testid="home-newsletter-form"
-      >
+    >
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="email"

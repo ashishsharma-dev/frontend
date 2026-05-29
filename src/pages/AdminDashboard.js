@@ -83,7 +83,9 @@ export default function AdminDashboard() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_POST);
   const [tagInput, setTagInput] = useState("");
-  const [groupByCategory, setGroupByCategory] = useState(true);
+  const [groupByCategory, setGroupByCategory] = useState(false);
+  const [postSearch, setPostSearch] = useState("");
+  const [postCategoryFilter, setPostCategoryFilter] = useState("all");
   const [postPage, setPostPage] = useState(1);
   const [coverFileName, setCoverFileName] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -98,6 +100,10 @@ export default function AdminDashboard() {
       load();
     }
   }, [user]);
+
+  useEffect(() => {
+    setPostPage(1);
+  }, [postSearch, postCategoryFilter, groupByCategory]);
 
   if (user === null) return <div className="text-center py-32 text-forest-500">Loading...</div>;
   if (!user || user.role !== "admin") return <Navigate to="/admin/login" replace />;
@@ -294,11 +300,25 @@ export default function AdminDashboard() {
     setAdFileName("");
   }
 
-  const totalPostPages = Math.max(1, Math.ceil(posts.length / POSTS_PER_PAGE));
+  const normalizedPostSearch = postSearch.trim().toLowerCase();
+  const filteredPosts = posts.filter((post) => {
+    const matchesCategory = postCategoryFilter === "all" || post.category === postCategoryFilter;
+    const matchesSearch = !normalizedPostSearch || [
+      post.title,
+      post.excerpt,
+      post.author,
+      formatCategoryLabel(post.category),
+      ...(post.tags || []),
+    ].some((value) => String(value || "").toLowerCase().includes(normalizedPostSearch));
+
+    return matchesCategory && matchesSearch;
+  });
+
+  const totalPostPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
   const currentPostPage = Math.min(postPage, totalPostPages);
-  const paginatedPosts = posts.slice((currentPostPage - 1) * POSTS_PER_PAGE, currentPostPage * POSTS_PER_PAGE);
-  const pageStart = posts.length === 0 ? 0 : (currentPostPage - 1) * POSTS_PER_PAGE + 1;
-  const pageEnd = Math.min(currentPostPage * POSTS_PER_PAGE, posts.length);
+  const paginatedPosts = filteredPosts.slice((currentPostPage - 1) * POSTS_PER_PAGE, currentPostPage * POSTS_PER_PAGE);
+  const pageStart = filteredPosts.length === 0 ? 0 : (currentPostPage - 1) * POSTS_PER_PAGE + 1;
+  const pageEnd = Math.min(currentPostPage * POSTS_PER_PAGE, filteredPosts.length);
   return (
     <div className="max-w-7xl mx-auto px-6 lg:px-10 py-12" data-testid="admin-dashboard">
       <div className="flex items-start justify-between gap-4 mb-8">
@@ -402,10 +422,15 @@ export default function AdminDashboard() {
         <div className="lg:col-span-7" data-testid="admin-posts-list">
           <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
             <div>
-              <h2 className="font-serif text-2xl text-forest-900">All Posts ({posts.length})</h2>
-              {!groupByCategory && posts.length > 0 && (
+              <h2 className="font-serif text-2xl text-forest-900">All Posts ({filteredPosts.length})</h2>
+              {filteredPosts.length !== posts.length && (
                 <div className="text-xs text-forest-500 mt-1">
-                  Showing {pageStart}-{pageEnd} of {posts.length} posts
+                  Filtered from {posts.length} total posts
+                </div>
+              )}
+              {!groupByCategory && filteredPosts.length > 0 && (
+                <div className="text-xs text-forest-500 mt-1">
+                  Showing {pageStart}-{pageEnd} of {filteredPosts.length} posts
                 </div>
               )}
             </div>
@@ -432,10 +457,70 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          <div className="mb-6 bg-white border border-sand-300 p-4 space-y-4" data-testid="admin-post-filters">
+            <div className="grid md:grid-cols-[minmax(0,1fr)_220px] gap-3">
+              <div>
+                <label className="eyebrow block mb-1">Search Posts</label>
+                <input
+                  type="text"
+                  value={postSearch}
+                  onChange={(e) => setPostSearch(e.target.value)}
+                  placeholder="Search by title, excerpt, author, or tag"
+                  className="w-full bg-sand-50 border border-sand-300 px-3 py-2 focus:outline-none focus:border-sage text-sm"
+                  data-testid="post-search"
+                />
+              </div>
+              <div>
+                <label className="eyebrow block mb-1">Category Filter</label>
+                <select
+                  value={postCategoryFilter}
+                  onChange={(e) => setPostCategoryFilter(e.target.value)}
+                  className="w-full bg-sand-50 border border-sand-300 px-3 py-2 focus:outline-none focus:border-sage text-sm"
+                  data-testid="post-category-filter"
+                >
+                  <option value="all">All categories</option>
+                  {CATEGORY_ORDER.map((item) => (
+                    <option key={item.slug} value={item.slug}>{formatCategoryLabel(item.slug)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <FilterChip active={postCategoryFilter === "all"} onClick={() => setPostCategoryFilter("all")}>
+                All
+              </FilterChip>
+              {CATEGORY_ORDER.map((item) => (
+                <FilterChip
+                  key={item.slug}
+                  active={postCategoryFilter === item.slug}
+                  onClick={() => setPostCategoryFilter(item.slug)}
+                >
+                  {formatCategoryLabel(item.slug)}
+                </FilterChip>
+              ))}
+              {(postSearch || postCategoryFilter !== "all") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPostSearch("");
+                    setPostCategoryFilter("all");
+                  }}
+                  className="text-xs text-red-600 hover:underline px-1"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          </div>
+
           {!groupByCategory ? (
             <div className="space-y-3">
               {paginatedPosts.map((p) => <AdminPostRow key={p.id} p={p} onEdit={editPost} onRemove={removePost} />)}
-              {posts.length > POSTS_PER_PAGE && (
+              {filteredPosts.length === 0 && (
+                <div className="bg-white border border-sand-300 p-6 text-sm text-forest-500">No posts match your search or category filter.</div>
+              )}
+              {filteredPosts.length > POSTS_PER_PAGE && (
                 <Pagination
                   page={currentPostPage}
                   totalPages={totalPostPages}
@@ -446,7 +531,7 @@ export default function AdminDashboard() {
           ) : (
             <div className="space-y-10" data-testid="admin-posts-grouped">
               {CATEGORY_ORDER.map((cat) => {
-                const items = posts.filter((p) => p.category === cat.slug);
+                const items = filteredPosts.filter((p) => p.category === cat.slug);
                 const label = formatCategoryLabel(cat.slug);
                 return (
                   <section key={cat.slug} data-testid={`admin-category-${cat.slug}`}>
@@ -472,6 +557,9 @@ export default function AdminDashboard() {
                   </section>
                 );
               })}
+              {filteredPosts.length === 0 && (
+                <div className="bg-white border border-sand-300 p-6 text-sm text-forest-500">No posts match your search or category filter.</div>
+              )}
             </div>
           )}
         </div>
@@ -753,6 +841,22 @@ function EditorButton({ label, onClick, active = false }) {
 
 function EditorDivider() {
   return <div className="w-px h-8 bg-sand-300 mx-1" aria-hidden="true" />;
+}
+
+function FilterChip({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3 py-1.5 text-xs border transition-colors ${
+        active
+          ? "border-forest-900 bg-forest-900 text-white"
+          : "border-sand-300 bg-white text-forest-700 hover:border-sage hover:text-sage"
+      }`}
+    >
+      {children}
+    </button>
+  );
 }
 
 function Pagination({ page, totalPages, onChange }) {

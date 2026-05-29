@@ -91,8 +91,24 @@ h1, h2, h3, h4, h5 {
 .article-body p.lead { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 1.45rem; line-height: 1.55; color: var(--ink); margin: 0 0 2rem; font-style: italic; }
 .article-body h2 { font-size: 1.85rem; margin-top: 2.6rem; margin-bottom: 1rem; }
 .article-body p { font-size: 1.06rem; margin-bottom: 1.4rem; }
-.article-body ul { margin-left: 1.2rem; margin-bottom: 1.4rem; }
+.article-body ul,
+.article-body ol,
+.ProseMirror ul,
+.ProseMirror ol {
+  margin-left: 1.2rem;
+  margin-bottom: 1.4rem;
+  padding-left: 1rem;
+}
+.article-body ul,
+.ProseMirror ul {
+  list-style: disc;
+}
+.article-body ol,
+.ProseMirror ol {
+  list-style: decimal;
+}
 .article-body li { margin-bottom: 0.6rem; font-size: 1.05rem; }
+.ProseMirror li { margin-bottom: 0.6rem; }
 .article-body blockquote {
   border-left: 3px solid var(--sage);
   padding: 0.4rem 1.4rem;

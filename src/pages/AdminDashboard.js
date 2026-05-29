@@ -34,6 +34,7 @@ const CATEGORY_ORDER = [
   { slug: "sports", color: "#6E8B7E" },
   { slug: "trading-investment", color: "#A48A6E" },
 ];
+const POSTS_PER_PAGE = 12;
 
 function AdminPostRow({ p, onEdit, onRemove }) {
   return (
@@ -125,6 +126,7 @@ export default function AdminDashboard() {
   const [form, setForm] = useState(EMPTY_POST);
   const [tagInput, setTagInput] = useState("");
   const [groupByCategory, setGroupByCategory] = useState(true);
+  const [postPage, setPostPage] = useState(1);
   const [coverFileName, setCoverFileName] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
 
@@ -154,6 +156,7 @@ export default function AdminDashboard() {
       setPosts(p.data);
       setComments(c.data);
       setAds(a.data);
+      setPostPage(1);
     } catch (e) {
       toast.error(formatApiError(e));
     }
@@ -358,6 +361,11 @@ export default function AdminDashboard() {
 
   const visibleComments = comments.filter((comment) => comment.approved).length;
   const hiddenComments = comments.length - visibleComments;
+  const totalPostPages = Math.max(1, Math.ceil(posts.length / POSTS_PER_PAGE));
+  const currentPostPage = Math.min(postPage, totalPostPages);
+  const paginatedPosts = posts.slice((currentPostPage - 1) * POSTS_PER_PAGE, currentPostPage * POSTS_PER_PAGE);
+  const pageStart = posts.length === 0 ? 0 : (currentPostPage - 1) * POSTS_PER_PAGE + 1;
+  const pageEnd = Math.min(currentPostPage * POSTS_PER_PAGE, posts.length);
 
   return (
     <div className="max-w-7xl mx-auto px-6 lg:px-10 py-12" data-testid="admin-dashboard">
@@ -410,7 +418,7 @@ export default function AdminDashboard() {
                 data-testid="form-cover"
               />
               <div className="text-xs text-forest-500 mt-2">
-                Upload PNG, JPG, GIF, or WebP. This replaces the old image URL field.
+                Upload PNG, JPG, GIF, or WebP. Files are stored on the server for long-term use.
               </div>
               {uploadingCover && <div className="text-xs text-sage mt-2">Uploading cover image...</div>}
               {coverFileName && <div className="text-xs text-forest-500 mt-2">Latest upload: {coverFileName}</div>}
@@ -461,18 +469,31 @@ export default function AdminDashboard() {
 
         <div className="lg:col-span-7" data-testid="admin-posts-list">
           <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
-            <h2 className="font-serif text-2xl text-forest-900">All Posts ({posts.length})</h2>
+            <div>
+              <h2 className="font-serif text-2xl text-forest-900">All Posts ({posts.length})</h2>
+              {!groupByCategory && posts.length > 0 && (
+                <div className="text-xs text-forest-500 mt-1">
+                  Showing {pageStart}-{pageEnd} of {posts.length} posts
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-2 text-xs">
               <span className="eyebrow mr-1">View</span>
               <button
                 type="button"
-                onClick={() => setGroupByCategory(false)}
+                onClick={() => {
+                  setGroupByCategory(false);
+                  setPostPage(1);
+                }}
                 className={`px-3 py-1.5 border ${!groupByCategory ? "border-forest-900 text-forest-900" : "border-sand-300 text-forest-500 hover:border-sage hover:text-sage"}`}
                 data-testid="view-flat"
               >Flat list</button>
               <button
                 type="button"
-                onClick={() => setGroupByCategory(true)}
+                onClick={() => {
+                  setGroupByCategory(true);
+                  setPostPage(1);
+                }}
                 className={`px-3 py-1.5 border ${groupByCategory ? "border-forest-900 text-forest-900" : "border-sand-300 text-forest-500 hover:border-sage hover:text-sage"}`}
                 data-testid="view-by-category"
               >By category</button>
@@ -481,7 +502,14 @@ export default function AdminDashboard() {
 
           {!groupByCategory ? (
             <div className="space-y-3">
-              {posts.map((p) => <AdminPostRow key={p.id} p={p} onEdit={editPost} onRemove={removePost} />)}
+              {paginatedPosts.map((p) => <AdminPostRow key={p.id} p={p} onEdit={editPost} onRemove={removePost} />)}
+              {posts.length > POSTS_PER_PAGE && (
+                <Pagination
+                  page={currentPostPage}
+                  totalPages={totalPostPages}
+                  onChange={setPostPage}
+                />
+              )}
             </div>
           ) : (
             <div className="space-y-10" data-testid="admin-posts-grouped">
@@ -606,7 +634,7 @@ export default function AdminDashboard() {
                   data-testid="ad-creative-upload"
                 />
                 <div className="text-xs text-forest-500 mt-2">
-                  Upload PNG, JPG, GIF, or WebP. Exact size required: 728 x 90 px.
+                  Upload PNG, JPG, GIF, or WebP. Exact size required: 728 x 90 px. Uploads are stored permanently.
                 </div>
                 {uploadingAd && <div className="text-xs text-sage mt-2">Uploading creative...</div>}
                 {adFileName && <div className="text-xs text-forest-500 mt-2">Latest upload: {adFileName}</div>}
@@ -832,6 +860,52 @@ function EditorButton({ label, onClick, active = false }) {
 
 function EditorDivider() {
   return <div className="w-px h-8 bg-sand-300 mx-1" aria-hidden="true" />;
+}
+
+function Pagination({ page, totalPages, onChange }) {
+  if (totalPages <= 1) return null;
+
+  const pages = [];
+  for (let current = 1; current <= totalPages; current += 1) {
+    pages.push(current);
+  }
+
+  return (
+    <div className="pt-4" data-testid="admin-posts-pagination">
+      <div className="flex flex-wrap items-center gap-2 border-t border-sand-300 pt-4">
+        <button
+          type="button"
+          onClick={() => onChange(page - 1)}
+          disabled={page === 1}
+          className="btn-ghost text-xs py-2 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+        {pages.map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => onChange(item)}
+            className={`min-w-10 px-3 py-2 text-xs border transition-colors ${
+              item === page
+                ? "border-forest-900 bg-forest-900 text-white"
+                : "border-sand-300 bg-white text-forest-700 hover:border-sage hover:text-sage"
+            }`}
+          >
+            {item}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => onChange(page + 1)}
+          disabled={page === totalPages}
+          className="btn-ghost text-xs py-2 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function Select({ label, value, onChange, options, testid }) {

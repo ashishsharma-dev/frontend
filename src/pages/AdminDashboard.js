@@ -622,7 +622,7 @@ export default function AdminDashboard() {
                   data-testid="ad-creative-upload"
                 />
                 <div className="text-xs text-forest-500 mt-2">
-                  Upload PNG, JPG, GIF, or WebP. Exact size required: 728 x 90 px. Uploads are stored permanently.
+                  Upload PNG, JPG, GIF, or WebP. Exact size required: 728 x 90 px. Creatives are stored in the backend media database.
                 </div>
                 {uploadingAd && <div className="text-xs text-sage mt-2">Uploading creative...</div>}
                 {adFileName && <div className="text-xs text-forest-500 mt-2">Latest upload: {adFileName}</div>}
